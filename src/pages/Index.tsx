@@ -1,11 +1,35 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import HeroSection from "@/components/HeroSection";
+import WalletConnect from "@/components/WalletConnect";
+import AgentChat from "@/components/AgentChat";
+import Dashboard from "@/components/Dashboard";
+import NeuralBackground from "@/components/NeuralBackground";
 
 const Index = () => {
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [showChat, setShowChat] = useState(false);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen relative overflow-hidden">
+      <NeuralBackground />
+      
+      <div className="relative z-10">
+        {!walletAddress ? (
+          <HeroSection onConnect={() => setShowChat(false)} />
+        ) : showChat ? (
+          <AgentChat walletAddress={walletAddress} onBack={() => setShowChat(false)} />
+        ) : (
+          <Dashboard 
+            walletAddress={walletAddress} 
+            onChatClick={() => setShowChat(true)}
+            onDisconnect={() => setWalletAddress(null)}
+          />
+        )}
+        
+        <WalletConnect 
+          onConnect={setWalletAddress} 
+          walletAddress={walletAddress}
+        />
       </div>
     </div>
   );
