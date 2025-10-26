@@ -5,10 +5,11 @@ import { MessageSquare, Activity, Zap, LogOut, TrendingUp, Shield } from "lucide
 interface DashboardProps {
   walletAddress: string;
   onChatClick: () => void;
+  onContractsClick: () => void;
   onDisconnect: () => void;
 }
 
-const Dashboard = ({ walletAddress, onChatClick, onDisconnect }: DashboardProps) => {
+const Dashboard = ({ walletAddress, onChatClick, onContractsClick, onDisconnect }: DashboardProps) => {
   return (
     <div className="min-h-screen px-4 py-20">
       <div className="max-w-7xl mx-auto">
@@ -69,7 +70,7 @@ const Dashboard = ({ walletAddress, onChatClick, onDisconnect }: DashboardProps)
             title="Smart Contracts"
             description="View and manage your deployed smart contracts and interactions"
             icon={<Shield className="w-12 h-12" />}
-            onClick={() => {}}
+            onClick={onContractsClick}
             buttonText="View Contracts"
             gradient="from-accent/20 to-neural-blue/20"
           />

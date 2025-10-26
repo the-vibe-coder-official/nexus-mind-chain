@@ -4,16 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Send, Bot, User } from "lucide-react";
 import { toast } from "sonner";
+import { streamChat, type Message } from "@/utils/aiChat";
 
 interface AgentChatProps {
   walletAddress: string;
   onBack: () => void;
-}
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
 }
 
 const AgentChat = ({ walletAddress, onBack }: AgentChatProps) => {
@@ -49,24 +44,43 @@ const AgentChat = ({ walletAddress, onBack }: AgentChatProps) => {
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response (replace with actual OpenAI API call)
-    setTimeout(() => {
-      const responses = [
-        "I've analyzed your request. To execute this transaction, I'll need to interact with the smart contract at address 0x1234...5678. Would you like me to proceed?",
-        "Based on current blockchain data, I recommend waiting for gas prices to drop. Current gas: 45 gwei, optimal range: 20-30 gwei.",
-        "I've initiated the transaction. Transaction hash: 0xabcd...efgh. Estimated confirmation time: 2-3 minutes.",
-        "Your portfolio has been updated. Total value: $12,450 (+5.2% today). Top performer: ETH (+8.3%).",
-      ];
-      
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: responses[Math.floor(Math.random() * responses.length)],
-        timestamp: new Date(),
-      };
+    let assistantContent = "";
+    
+    const updateAssistant = (chunk: string) => {
+      assistantContent += chunk;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return prev.map((m, i) => 
+            i === prev.length - 1 
+              ? { ...m, content: assistantContent } 
+              : m
+          );
+        }
+        return [...prev, { 
+          role: "assistant" as const, 
+          content: assistantContent, 
+          timestamp: new Date() 
+        }];
+      });
+    };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+    try {
+      await streamChat({
+        messages: [...messages, userMessage],
+        onDelta: updateAssistant,
+        onDone: () => setIsLoading(false),
+        onError: (error) => {
+          console.error("Chat error:", error);
+          toast.error(error);
+          setIsLoading(false);
+        },
+      });
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast.error("Failed to send message. Please try again.");
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
