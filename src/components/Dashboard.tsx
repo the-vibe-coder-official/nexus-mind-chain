@@ -6,10 +6,21 @@ interface DashboardProps {
   walletAddress: string;
   onChatClick: () => void;
   onContractsClick: () => void;
+  onMultiAgentClick: () => void;
+  onNFTMarketClick: () => void;
+  onAnalyticsClick: () => void;
   onDisconnect: () => void;
 }
 
-const Dashboard = ({ walletAddress, onChatClick, onContractsClick, onDisconnect }: DashboardProps) => {
+const Dashboard = ({ 
+  walletAddress, 
+  onChatClick, 
+  onContractsClick, 
+  onMultiAgentClick,
+  onNFTMarketClick,
+  onAnalyticsClick,
+  onDisconnect 
+}: DashboardProps) => {
   return (
     <div className="min-h-screen px-4 py-20">
       <div className="max-w-7xl mx-auto">
@@ -57,7 +68,7 @@ const Dashboard = ({ walletAddress, onChatClick, onContractsClick, onDisconnect 
         </div>
 
         {/* Main Actions */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           <ActionCard
             title="AI Agent Chat"
             description="Interact with intelligent agents to execute transactions and get insights"
@@ -73,6 +84,30 @@ const Dashboard = ({ walletAddress, onChatClick, onContractsClick, onDisconnect 
             onClick={onContractsClick}
             buttonText="View Contracts"
             gradient="from-accent/20 to-neural-blue/20"
+          />
+          <ActionCard
+            title="Multi-Agent System"
+            description="Coordinate multiple AI agents to collaborate on complex tasks"
+            icon={<Activity className="w-12 h-12" />}
+            onClick={onMultiAgentClick}
+            buttonText="Manage Agents"
+            gradient="from-primary/20 to-neural-blue/20"
+          />
+          <ActionCard
+            title="NFT Marketplace"
+            description="Trade AI agents as NFTs on the blockchain"
+            icon={<TrendingUp className="w-12 h-12" />}
+            onClick={onNFTMarketClick}
+            buttonText="Browse Market"
+            gradient="from-accent/20 to-primary/20"
+          />
+          <ActionCard
+            title="Analytics"
+            description="View real-time insights and performance metrics"
+            icon={<Zap className="w-12 h-12" />}
+            onClick={onAnalyticsClick}
+            buttonText="View Analytics"
+            gradient="from-neural-blue/20 to-accent/20"
           />
         </div>
 
