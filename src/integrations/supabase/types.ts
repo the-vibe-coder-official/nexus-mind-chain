@@ -14,7 +14,225 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agent_collaborations: {
+        Row: {
+          agent_ids: string[]
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string | null
+          user_id: string
+          workflow_type: string | null
+        }
+        Insert: {
+          agent_ids: string[]
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string | null
+          user_id: string
+          workflow_type?: string | null
+        }
+        Update: {
+          agent_ids?: string[]
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string | null
+          user_id?: string
+          workflow_type?: string | null
+        }
+        Relationships: []
+      }
+      agent_tasks: {
+        Row: {
+          agent_id: string
+          completed_at: string | null
+          created_at: string | null
+          description: string
+          id: string
+          priority: string | null
+          result: string | null
+          started_at: string | null
+          status: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          priority?: string | null
+          result?: string | null
+          started_at?: string | null
+          status?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          priority?: string | null
+          result?: string | null
+          started_at?: string | null
+          status?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_tasks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agents: {
+        Row: {
+          capabilities: string[] | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_nft: boolean | null
+          model: string
+          name: string
+          nft_contract_address: string | null
+          nft_token_id: string | null
+          performance_score: number | null
+          successful_tasks: number | null
+          total_tasks: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          capabilities?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_nft?: boolean | null
+          model: string
+          name: string
+          nft_contract_address?: string | null
+          nft_token_id?: string | null
+          performance_score?: number | null
+          successful_tasks?: number | null
+          total_tasks?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          capabilities?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_nft?: boolean | null
+          model?: string
+          name?: string
+          nft_contract_address?: string | null
+          nft_token_id?: string | null
+          performance_score?: number | null
+          successful_tasks?: number | null
+          total_tasks?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          agent_id: string | null
+          created_at: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_listings: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          currency: string | null
+          id: string
+          is_active: boolean | null
+          price: number
+          seller_id: string
+          sold_at: string | null
+          views: number | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          is_active?: boolean | null
+          price: number
+          seller_id: string
+          sold_at?: string | null
+          views?: number | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          is_active?: boolean | null
+          price?: number
+          seller_id?: string
+          sold_at?: string | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_listings_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
