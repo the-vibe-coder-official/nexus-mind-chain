@@ -35,6 +35,14 @@ contract NeuraLinkAgent {
     event AgentRegistered(uint256 indexed agentId, address indexed owner, string name);
     event TaskCreated(uint256 indexed taskId, uint256 indexed agentId, address requester);
     event TaskCompleted(uint256 indexed taskId, uint256 indexed agentId);
+    event AgentPurchased(uint256 indexed agentId, address indexed buyer, address indexed seller, uint256 price);
+    
+    address public platformOwner;
+    uint256 public platformFeePercentage = 2; // 2% platform fee
+    
+    constructor() {
+        platformOwner = msg.sender;
+    }
     
     /**
      * @dev Register a new AI agent
@@ -124,5 +132,54 @@ contract NeuraLinkAgent {
     function toggleAgentStatus(uint256 _agentId) external {
         require(agents[_agentId].owner == msg.sender, "Only owner can toggle status");
         agents[_agentId].isActive = !agents[_agentId].isActive;
+    }
+    
+    /**
+     * @dev Purchase an AI agent NFT
+     * @param _agentId ID of the agent to purchase
+     */
+    function purchaseAgent(uint256 _agentId) external payable {
+        Agent storage agent = agents[_agentId];
+        require(agent.isActive, "Agent is not active");
+        require(msg.sender != agent.owner, "Cannot purchase your own agent");
+        require(msg.value > 0, "Payment must be greater than 0");
+        
+        address previousOwner = agent.owner;
+        uint256 salePrice = msg.value;
+        
+        // Calculate platform fee (2%)
+        uint256 platformFee = (salePrice * platformFeePercentage) / 100;
+        uint256 sellerAmount = salePrice - platformFee;
+        
+        // Transfer ownership
+        agent.owner = msg.sender;
+        
+        // Transfer funds to seller
+        payable(previousOwner).transfer(sellerAmount);
+        
+        // Transfer platform fee
+        payable(platformOwner).transfer(platformFee);
+        
+        emit AgentPurchased(_agentId, msg.sender, previousOwner, salePrice);
+    }
+    
+    /**
+     * @dev Update platform fee percentage (only owner)
+     * @param _newFee New fee percentage
+     */
+    function updatePlatformFee(uint256 _newFee) external {
+        require(msg.sender == platformOwner, "Only platform owner");
+        require(_newFee <= 10, "Fee cannot exceed 10%");
+        platformFeePercentage = _newFee;
+    }
+    
+    /**
+     * @dev Withdraw accumulated platform fees (only owner)
+     */
+    function withdrawPlatformFees() external {
+        require(msg.sender == platformOwner, "Only platform owner");
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No fees to withdraw");
+        payable(platformOwner).transfer(balance);
     }
 }

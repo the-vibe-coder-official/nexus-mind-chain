@@ -11,11 +11,14 @@ export const CONTRACT_ABI = [
   "function getAgent(uint256 _agentId) external view returns (tuple(address owner, string name, string model, uint256 taskCount, bool isActive, uint256 createdAt))",
   "function getTask(uint256 _taskId) external view returns (tuple(uint256 agentId, address requester, string description, uint256 reward, bool completed, uint256 timestamp))",
   "function toggleAgentStatus(uint256 _agentId) external",
+  "function purchaseAgent(uint256 _agentId) external payable",
   "function agentCounter() external view returns (uint256)",
   "function taskCounter() external view returns (uint256)",
+  "function platformFeePercentage() external view returns (uint256)",
   "event AgentRegistered(uint256 indexed agentId, address indexed owner, string name)",
   "event TaskCreated(uint256 indexed taskId, uint256 indexed agentId, address requester)",
-  "event TaskCompleted(uint256 indexed taskId, uint256 indexed agentId)"
+  "event TaskCompleted(uint256 indexed taskId, uint256 indexed agentId)",
+  "event AgentPurchased(uint256 indexed agentId, address indexed buyer, address indexed seller, uint256 price)"
 ];
 
 export async function getContract(signer?: ethers.Signer) {
@@ -111,4 +114,42 @@ export async function getTaskInfo(taskId: number) {
     completed: task.completed,
     timestamp: new Date(Number(task.timestamp) * 1000)
   };
+}
+
+export async function purchaseAgentNFT(agentId: number, priceInEth: string) {
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = await getContract(signer);
+  
+  const tx = await contract.purchaseAgent(agentId, {
+    value: ethers.parseEther(priceInEth)
+  });
+  const receipt = await tx.wait();
+  
+  const event = receipt.logs.find((log: any) => {
+    try {
+      const parsed = contract.interface.parseLog(log);
+      return parsed?.name === "AgentPurchased";
+    } catch {
+      return false;
+    }
+  });
+  
+  if (event) {
+    const parsed = contract.interface.parseLog(event);
+    return {
+      agentId: Number(parsed?.args.agentId),
+      buyer: parsed?.args.buyer,
+      seller: parsed?.args.seller,
+      price: ethers.formatEther(parsed?.args.price)
+    };
+  }
+  
+  return receipt;
+}
+
+export async function getPlatformFee() {
+  const contract = await getContract();
+  const fee = await contract.platformFeePercentage();
+  return Number(fee);
 }

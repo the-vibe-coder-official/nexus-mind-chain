@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Store, Sparkles, TrendingUp, Eye } from "lucide-react";
+import { ArrowLeft, Store, Sparkles, TrendingUp, Eye, Loader2 } from "lucide-react";
+import { purchaseAgentNFT, getPlatformFee } from "@/utils/contracts";
 
 interface NFTMarketplaceProps {
   walletAddress: string;
@@ -19,11 +20,14 @@ const NFTMarketplace = ({ walletAddress, onBack }: NFTMarketplaceProps) => {
   const [selectedAgent, setSelectedAgent] = useState<string>("");
   const [price, setPrice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
+  const [platformFee, setPlatformFee] = useState<number>(2);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchListings();
     fetchMyAgents();
+    loadPlatformFee();
 
     // Subscribe to real-time updates
     const channel = supabase
@@ -45,6 +49,15 @@ const NFTMarketplace = ({ walletAddress, onBack }: NFTMarketplaceProps) => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const loadPlatformFee = async () => {
+    try {
+      const fee = await getPlatformFee();
+      setPlatformFee(fee);
+    } catch (error) {
+      console.error('Error loading platform fee:', error);
+    }
+  };
 
   const fetchListings = async () => {
     const { data, error } = await supabase
@@ -170,6 +183,91 @@ const NFTMarketplace = ({ walletAddress, onBack }: NFTMarketplaceProps) => {
     fetchListings();
   };
 
+  const handlePurchaseNFT = async (listing: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!window.ethereum) {
+      toast({
+        title: "MetaMask Required",
+        description: "Please install MetaMask to purchase NFTs",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPurchasingId(listing.id);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Check if user is trying to buy their own NFT
+      if (listing.seller_id === user.id) {
+        throw new Error("You cannot purchase your own NFT");
+      }
+
+      // Execute blockchain transaction
+      toast({
+        title: "Transaction Started",
+        description: "Please confirm the transaction in MetaMask...",
+      });
+
+      const agentId = parseInt(listing.agents.nft_token_id.replace('NFT-', ''));
+      const purchaseResult = await purchaseAgentNFT(agentId, listing.price.toString());
+
+      // Update marketplace listing
+      const { error: updateError } = await supabase
+        .from('marketplace_listings')
+        .update({
+          is_active: false,
+          sold_at: new Date().toISOString(),
+        })
+        .eq('id', listing.id);
+
+      if (updateError) throw updateError;
+
+      // Update agent ownership in database
+      const { error: agentError } = await supabase
+        .from('agents')
+        .update({
+          user_id: user.id,
+        })
+        .eq('id', listing.agent_id);
+
+      if (agentError) throw agentError;
+
+      // Track analytics
+      await supabase.functions.invoke('analytics-tracker', {
+        body: {
+          eventType: 'nft_purchased',
+          eventData: { 
+            price: listing.price,
+            agentId: listing.agent_id,
+            transactionHash: purchaseResult.transactionHash 
+          },
+          agentId: listing.agent_id,
+        },
+      });
+
+      toast({
+        title: "Purchase Successful!",
+        description: `You now own ${listing.agents.name}. Platform fee: ${platformFee}%`,
+      });
+
+      fetchListings();
+      fetchMyAgents();
+    } catch (error: any) {
+      console.error('Purchase error:', error);
+      toast({
+        title: "Purchase Failed",
+        description: error.message || "Failed to complete purchase",
+        variant: "destructive",
+      });
+    } finally {
+      setPurchasingId(null);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <Button variant="ghost" onClick={onBack} className="mb-6">
@@ -266,17 +364,39 @@ const NFTMarketplace = ({ walletAddress, onBack }: NFTMarketplaceProps) => {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Price</span>
                     <span className="text-xl font-bold">
                       {listing.price} {listing.currency}
                     </span>
                   </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Platform Fee ({platformFee}%)</span>
+                    <span>{(listing.price * platformFee / 100).toFixed(4)} ETH</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span>Seller Receives</span>
+                    <span>{(listing.price * (100 - platformFee) / 100).toFixed(4)} ETH</span>
+                  </div>
                 </div>
 
-                <Button className="w-full" variant="default">
-                  Buy Now
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={(e) => handlePurchaseNFT(listing, e)}
+                  disabled={purchasingId === listing.id || listing.seller_id === walletAddress}
+                >
+                  {purchasingId === listing.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : listing.seller_id === walletAddress ? (
+                    "Your Listing"
+                  ) : (
+                    "Buy Now"
+                  )}
                 </Button>
 
                 <div className="text-xs text-center text-muted-foreground">
