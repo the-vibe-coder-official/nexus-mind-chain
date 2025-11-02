@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { registerAgent, createTask, getAgentInfo, CONTRACT_ADDRESS } from "@/utils/contracts";
+import ContractDeployment from "./ContractDeployment";
+import CreateAgentForm from "./CreateAgentForm";
 
 interface SmartContractPanelProps {
   walletAddress: string;
@@ -19,6 +21,26 @@ const SmartContractPanel = ({ walletAddress, onBack }: SmartContractPanelProps) 
   const [taskReward, setTaskReward] = useState("");
   const [agentId, setAgentId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [contractAddress, setContractAddress] = useState(CONTRACT_ADDRESS);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleContractDeployed = (address: string) => {
+    setContractAddress(address);
+    localStorage.setItem("deployed_contract_address", address);
+    toast.success("Contract-Adresse gespeichert!");
+  };
+
+  const handleAgentCreated = () => {
+    setRefreshKey(prev => prev + 1);
+    toast.success("Agent erfolgreich erstellt! Du kannst ihn jetzt verwenden.");
+  };
+
+  useEffect(() => {
+    const savedAddress = localStorage.getItem("deployed_contract_address");
+    if (savedAddress && savedAddress !== "0x0000000000000000000000000000000000000000") {
+      setContractAddress(savedAddress);
+    }
+  }, []);
 
   const handleRegisterAgent = async () => {
     if (!agentName || !agentModel) {
@@ -116,6 +138,17 @@ const SmartContractPanel = ({ walletAddress, onBack }: SmartContractPanelProps) 
               Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
             </p>
           </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 mb-6">
+          {/* Contract Deployment */}
+          <ContractDeployment onContractDeployed={handleContractDeployed} />
+          
+          {/* Create Agent Form */}
+          <CreateAgentForm 
+            walletAddress={walletAddress} 
+            onAgentCreated={handleAgentCreated}
+          />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -251,15 +284,15 @@ const SmartContractPanel = ({ walletAddress, onBack }: SmartContractPanelProps) 
               <div>
                 <Label>Contract Address</Label>
                 <p className="text-sm text-muted-foreground break-all">
-                  {CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000" 
-                    ? "Not deployed yet"
-                    : CONTRACT_ADDRESS
+                  {contractAddress === "0x0000000000000000000000000000000000000000" 
+                    ? "Noch nicht deployed"
+                    : contractAddress
                   }
                 </p>
               </div>
-              {CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000" && (
+              {contractAddress === "0x0000000000000000000000000000000000000000" && (
                 <p className="text-xs text-yellow-500 mt-4">
-                  ⚠️ Please deploy the contract first. See contracts/deploy-instructions.md
+                  ⚠️ Bitte erst den Contract deployen (siehe linke Karte oben)
                 </p>
               )}
             </div>
