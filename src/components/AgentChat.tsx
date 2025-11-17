@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Send, Bot, User } from "lucide-react";
 import { toast } from "sonner";
 import { streamChat, type Message } from "@/utils/aiChat";
+import { chatMessageSchema } from "@/lib/validationSchemas";
 
 interface AgentChatProps {
   walletAddress: string;
@@ -34,9 +35,17 @@ const AgentChat = ({ walletAddress, onBack }: AgentChatProps) => {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    // Validate message using Zod schema
+    const validation = chatMessageSchema.safeParse({ content: input });
+    
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
     const userMessage: Message = {
       role: "user",
-      content: input,
+      content: validation.data.content,
       timestamp: new Date(),
     };
 

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Store, Sparkles, TrendingUp, Eye, Loader2 } from "lucide-react";
 import { purchaseAgentNFT, getPlatformFee } from "@/utils/contracts";
+import { listingSchema } from "@/lib/validationSchemas";
 
 interface NFTMarketplaceProps {
   walletAddress: string;
@@ -112,6 +113,21 @@ const NFTMarketplace = ({ walletAddress, onBack }: NFTMarketplaceProps) => {
       return;
     }
 
+    // Validate input using Zod schema
+    const validation = listingSchema.safeParse({
+      agentId: selectedAgent,
+      price: parseFloat(price),
+    });
+
+    if (!validation.success) {
+      toast({
+        title: "Invalid Input",
+        description: validation.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -135,7 +151,7 @@ const NFTMarketplace = ({ walletAddress, onBack }: NFTMarketplaceProps) => {
         .insert({
           agent_id: selectedAgent,
           seller_id: user.id,
-          price: parseFloat(price),
+          price: validation.data.price,
         });
 
       if (listingError) throw listingError;

@@ -8,6 +8,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { registerAgent, createTask, getAgentInfo, CONTRACT_ADDRESS } from "@/utils/contracts";
 import ContractDeployment from "./ContractDeployment";
 import CreateAgentForm from "./CreateAgentForm";
+import { contractAgentSchema, contractTaskSchema } from "@/lib/validationSchemas";
 
 interface SmartContractPanelProps {
   walletAddress: string;
@@ -43,8 +44,14 @@ const SmartContractPanel = ({ walletAddress, onBack }: SmartContractPanelProps) 
   }, []);
 
   const handleRegisterAgent = async () => {
-    if (!agentName || !agentModel) {
-      toast.error("Please fill in all fields");
+    // Validate input using Zod schema
+    const validation = contractAgentSchema.safeParse({
+      name: agentName,
+      model: agentModel,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
@@ -55,7 +62,7 @@ const SmartContractPanel = ({ walletAddress, onBack }: SmartContractPanelProps) 
 
     setIsLoading(true);
     try {
-      const id = await registerAgent(agentName, agentModel);
+      const id = await registerAgent(validation.data.name, validation.data.model);
       setAgentId(id.toString());
       toast.success(`Agent registered successfully! ID: ${id}`);
       setAgentName("");
@@ -69,8 +76,15 @@ const SmartContractPanel = ({ walletAddress, onBack }: SmartContractPanelProps) 
   };
 
   const handleCreateTask = async () => {
-    if (!agentId || !taskDescription || !taskReward) {
-      toast.error("Please fill in all fields");
+    // Validate input using Zod schema
+    const validation = contractTaskSchema.safeParse({
+      agentId: agentId ? Number(agentId) : undefined,
+      description: taskDescription,
+      rewardInEth: taskReward,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
@@ -81,7 +95,7 @@ const SmartContractPanel = ({ walletAddress, onBack }: SmartContractPanelProps) 
 
     setIsLoading(true);
     try {
-      const taskId = await createTask(Number(agentId), taskDescription, taskReward);
+      const taskId = await createTask(validation.data.agentId, validation.data.description, validation.data.rewardInEth);
       toast.success(`Task created successfully! ID: ${taskId}`);
       setTaskDescription("");
       setTaskReward("");

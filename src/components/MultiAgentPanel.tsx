@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Users, Play, Loader2 } from "lucide-react";
+import { collaborationSchema } from "@/lib/validationSchemas";
 
 interface MultiAgentPanelProps {
   walletAddress: string;
@@ -56,19 +57,18 @@ const MultiAgentPanel = ({ walletAddress, onBack }: MultiAgentPanelProps) => {
   };
 
   const handleRunCollaboration = async () => {
-    if (selectedAgentIds.length < 2) {
-      toast({
-        title: "Select Multiple Agents",
-        description: "Please select at least 2 agents for collaboration",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Validate input using Zod schema
+    const validation = collaborationSchema.safeParse({
+      name: collaborationName || `Collaboration ${new Date().toLocaleString()}`,
+      description: task,
+      workflowType,
+      agentIds: selectedAgentIds,
+    });
 
-    if (!task.trim()) {
+    if (!validation.success) {
       toast({
-        title: "Task Required",
-        description: "Please enter a task description",
+        title: "Invalid Input",
+        description: validation.error.errors[0].message,
         variant: "destructive",
       });
       return;
@@ -85,11 +85,11 @@ const MultiAgentPanel = ({ walletAddress, onBack }: MultiAgentPanelProps) => {
       const { data: collaboration, error: collabError } = await supabase
         .from('agent_collaborations')
         .insert({
-          name: collaborationName || `Collaboration ${new Date().toLocaleString()}`,
-          description: task,
+          name: validation.data.name,
+          description: validation.data.description,
           user_id: user.id,
-          agent_ids: selectedAgentIds,
-          workflow_type: workflowType,
+          agent_ids: validation.data.agentIds,
+          workflow_type: validation.data.workflowType,
         })
         .select()
         .single();
