@@ -161,7 +161,7 @@ export type Database = {
           event_data: Json | null
           event_type: string
           id: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           agent_id?: string | null
@@ -169,7 +169,7 @@ export type Database = {
           event_data?: Json | null
           event_type: string
           id?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           agent_id?: string | null
@@ -177,7 +177,7 @@ export type Database = {
           event_data?: Json | null
           event_type?: string
           id?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {

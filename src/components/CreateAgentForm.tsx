@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Loader2, Bot, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { registerAgent, CONTRACT_ADDRESS } from "@/utils/contracts";
+import { agentSchema } from "@/lib/validationSchemas";
 
 interface CreateAgentFormProps {
   walletAddress: string;
@@ -45,8 +46,16 @@ const CreateAgentForm = ({ walletAddress, onAgentCreated }: CreateAgentFormProps
   };
 
   const handleCreate = async () => {
-    if (!name.trim() || !model) {
-      toast.error("Bitte Name und Model ausfüllen");
+    // Validate input
+    const validation = agentSchema.safeParse({
+      name,
+      model,
+      description: description || undefined,
+      capabilities: capabilities.length > 0 ? capabilities : undefined
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
       return;
     }
 

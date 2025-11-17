@@ -13,12 +13,24 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: req.headers.get('Authorization')! } }
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.error("Authentication error:", authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Please sign in' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { agentIds, task, workflowType } = await req.json();
 
-    console.log(`Multi-agent orchestration started: ${agentIds.length} agents, workflow: ${workflowType}`);
+    console.log(`Multi-agent orchestration started by user ${user.id}: ${agentIds.length} agents, workflow: ${workflowType}`);
 
     // Get all agents
     const { data: agents, error: agentsError } = await supabase
