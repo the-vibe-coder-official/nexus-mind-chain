@@ -98,6 +98,13 @@ export type Database = {
             referencedRelation: "agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "agent_tasks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agents: {
@@ -187,6 +194,13 @@ export type Database = {
             referencedRelation: "agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "analytics_events_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       marketplace_listings: {
@@ -231,11 +245,32 @@ export type Database = {
             referencedRelation: "agents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "marketplace_listings_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      marketplace_agents: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_nft: boolean | null
+          model: string | null
+          name: string | null
+          nft_token_id: string | null
+          performance_score: number | null
+          successful_tasks: number | null
+          total_tasks: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
