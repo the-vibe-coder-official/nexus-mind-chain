@@ -14,18 +14,25 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: req.headers.get('Authorization')! } }
+    });
 
-    const authHeader = req.headers.get('Authorization');
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { eventType, eventData, agentId } = await req.json();
-
-    const { data: { user } } = await supabase.auth.getUser();
 
     const { data, error } = await supabase
       .from('analytics_events')
       .insert({
-        user_id: user?.id,
+        user_id: user.id,
         event_type: eventType,
         event_data: eventData,
         agent_id: agentId,

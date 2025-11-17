@@ -69,10 +69,10 @@ port = 54328
 inspector_port = 8083
 
 [functions.ai-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.multi-agent-orchestration]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analytics-tracker]
-verify_jwt = false
+verify_jwt = true

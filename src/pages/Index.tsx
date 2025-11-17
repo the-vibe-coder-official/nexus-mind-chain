@@ -21,6 +21,17 @@ const Index = () => {
     <div className="min-h-screen relative overflow-hidden">
       <NeuralBackground />
       
+      <div className="fixed top-6 left-6 z-50">
+        <Button
+          onClick={handleSignOut}
+          variant="outline"
+          className="glassmorphic"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out
+        </Button>
+      </div>
+      
       <div className="relative z-10">
         {!walletAddress ? (
           <HeroSection onConnect={() => setShowChat(false)} />
